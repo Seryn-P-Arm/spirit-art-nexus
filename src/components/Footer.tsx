@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Mail, Palette, Gamepad2 } from 'lucide-react';
+import { Mail, Palette, Gamepad2, Volume2, VolumeX } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 
 export const Footer = () => {
+  const { isPlaying, togglePlay } = useAudioPlayer();
+
   return (
     <footer className="border-t border-border bg-card/50 backdrop-blur-sm">
       <div className="container mx-auto px-6 py-8">
@@ -47,8 +51,28 @@ export const Footer = () => {
           </div>
         </div>
         
-        <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} ArtisticSpirit. All rights reserved.
+        <div className="mt-8 pt-8 border-t border-border">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} ArtisticSpirit. All rights reserved.
+            </p>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                {isPlaying ? (
+                  <Volume2 className="w-4 h-4 text-primary" />
+                ) : (
+                  <VolumeX className="w-4 h-4 text-muted-foreground" />
+                )}
+                <span className="text-sm text-muted-foreground">Ambient Sound</span>
+              </div>
+              <Switch
+                checked={isPlaying}
+                onCheckedChange={togglePlay}
+                aria-label="Toggle ambient soundscape"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </footer>
