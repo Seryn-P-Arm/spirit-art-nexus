@@ -1,12 +1,16 @@
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function About() {
   const [phoneButtonPos, setPhoneButtonPos] = useState({ x: 0, y: 0 });
   const [isPhoneHovered, setIsPhoneHovered] = useState(false);
+  const [phoneClicked, setPhoneClicked] = useState(false);
 
   const handlePhoneHover = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (phoneClicked) return;
+    
     if (!isPhoneHovered) {
       setIsPhoneHovered(true);
       return;
@@ -26,6 +30,14 @@ export default function About() {
     setTimeout(() => {
       setPhoneButtonPos({ x: 0, y: 0 });
     }, 2000);
+  };
+
+  const handlePhoneClick = () => {
+    setPhoneClicked(true);
+    toast.error("Nice try! 😏", {
+      description: "I don't actually take phone calls. Use email instead! 📧",
+      duration: 5000,
+    });
   };
 
   return (
@@ -89,14 +101,31 @@ export default function About() {
               }}
               onMouseEnter={handlePhoneHover}
               onMouseMove={handlePhoneHover}
-              onMouseLeave={() => setIsPhoneHovered(false)}
+              onMouseLeave={() => !phoneClicked && setIsPhoneHovered(false)}
+              onClick={handlePhoneClick}
+              disabled={phoneClicked}
             >
-              <Phone className="w-5 h-5" />
-              Call Me
+              {phoneClicked ? (
+                <>
+                  <XCircle className="w-5 h-5 animate-spin" />
+                  Gotcha! 😏
+                </>
+              ) : (
+                <>
+                  <Phone className="w-5 h-5" />
+                  Call Me
+                </>
+              )}
             </Button>
           </div>
           <p className="text-center text-sm text-muted-foreground mt-4">
-            Try to catch the phone button if you dare... 👀
+            {phoneClicked ? (
+              <span className="animate-pulse text-primary font-medium">
+                Now use the email button like a sensible person! 📧✨
+              </span>
+            ) : (
+              "Try to catch the phone button if you dare... 👀"
+            )}
           </p>
         </div>
       </div>
