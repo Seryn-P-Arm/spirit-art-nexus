@@ -65,6 +65,9 @@ export default function Commissions() {
                 <CardTitle className="text-2xl">{tier.name}</CardTitle>
                 <CardDescription>
                   <span className="text-3xl font-bold text-foreground">{tier.price}</span>
+                  <p className="mt-2 text-sm text-muted-foreground/90">
+                    {tier.description}
+                  </p>
                 </CardDescription>
               </CardHeader>
               <CardContent>
