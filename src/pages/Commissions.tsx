@@ -9,19 +9,33 @@ import { toast } from 'sonner';
 
 const pricingTiers = [
   {
+    name: 'Sketch',
+    price: '$15-$35',
+    description: '1 Character Included. Quick turnaround, focused on composition and line art only. Each additional subject/character adds 50% to the base price.',
+    features: ['1 Character Included', 'Clean line art only (no color/rendering)', 'Rough or simple background', '1 minor revision', 'High-res digital file'],
+  },
+  {
     name: 'Basic',
-    price: '$150',
-    features: ['Single character/subject', 'Simple background', '1 revision round', 'High-res digital file'],
+    price: '$29-$75',
+    // Clarify: 1 character included. The fee applies to all additional characters.
+    description: '1 Character Included in Base Price. Each additional subject/character adds 50% to the base price.',
+    // Clarify: Features apply to the base package, not the final total.
+    features: ['1 Character Included', 'Simple background (color/gradient)', '1 revision round', 'High-res digital file'],
   },
   {
     name: 'Standard',
-    price: '$300',
-    features: ['Multiple characters/subjects', 'Detailed background', '2 revision rounds', 'High-res + print files', 'Commercial usage rights'],
+    price: '$80-$129',
+    // Clarify: 1 character included. The fee applies to all additional characters.
+    description: '1 Character Included in Base Price. Each additional subject/character adds 50% to the base price.',
+    // Clarify: Now focuses on quality of service and background, not character count.
+    features: ['1 Character Included', 'Detailed background/scenery', '2 revision rounds', 'High-res + print files', 'Commercial usage rights'],
   },
   {
     name: 'Premium',
-    price: '$500+',
-    features: ['Complex scene', 'Multiple characters', 'Unlimited revisions', 'All file formats', 'Full commercial rights', 'Priority turnaround'],
+    price: '$149-$500',
+    // Clarify: 1 character included. The fee applies to all additional characters.
+    description: '1 Character Included in Base Price. Final price is based on custom estimate after submission (additional characters add 50%).',
+    features: ['1 Character Included', 'Complex scene/full environment', 'Unlimited revisions', 'All file formats', 'Full commercial rights', 'Priority turnaround'],
   },
 ];
 
@@ -39,7 +53,7 @@ export default function Commissions() {
             Commissions
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Bring your vision to life. Choose a tier and tell me about your dream artwork.
+            Bring your vision to life. Choose a tier and tell me about your dream artwork. <br/>
           </p>
         </div>
 
@@ -95,9 +109,9 @@ export default function Commissions() {
                     <SelectValue placeholder="Select a tier" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="basic">Basic - $150</SelectItem>
-                    <SelectItem value="standard">Standard - $300</SelectItem>
-                    <SelectItem value="premium">Premium - $500+</SelectItem>
+                    <SelectItem value="basic">Basic - $29-$75</SelectItem>
+                    <SelectItem value="standard">Standard - $80-$129</SelectItem>
+                    <SelectItem value="premium">Premium - $149+</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
