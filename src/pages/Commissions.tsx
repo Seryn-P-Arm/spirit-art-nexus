@@ -112,6 +112,7 @@ export default function Commissions() {
                     <SelectValue placeholder="Select a tier" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="sketch">Sketch - $15-$35</SelectItem>
                     <SelectItem value="basic">Basic - $29-$75</SelectItem>
                     <SelectItem value="standard">Standard - $80-$129</SelectItem>
                     <SelectItem value="premium">Premium - $149+</SelectItem>
