@@ -11,6 +11,44 @@ const generateColorPool = (count: number) => {
   return Array.from({ length: count }, () => generateRandomColor());
 };
 
+// Helper function to generate a pool that includes the targets
+const generatePool = (targetColors: string[]) => {
+  // 1. Get 8 random colors that are NOT already targets
+  const nonTargetColors = Array.from({ length: 8 }, () => {
+    let newColor = generateRandomColor();
+    // Simple check to ensure the filler colors are unique from targets (optional, but good)
+    while (targetColors.includes(newColor)) {
+      newColor = generateRandomColor();
+    }
+    return newColor;
+  });
+
+  // 2. Combine targets and non-targets
+  const fullPool = [...targetColors, ...nonTargetColors];
+
+  // 3. Shuffle the array to mix them up
+  for (let i = fullPool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [fullPool[i], fullPool[j]] = [fullPool[j], fullPool[i]];
+  }
+
+  return fullPool;
+};
+
+// New function to handle color generation for a new round
+const initializeRoundColors = (currentScore: number) => {
+    // Generate 4 new target colors
+    const newTargetColors = generateColorPool(4);
+    
+    // Generate the pool ensuring targets are included
+    const newColorPool = generatePool(newTargetColors);
+    
+    return { 
+        newTargetColors, 
+        newColorPool 
+    };
+};
+
 export default function ColorCompass() {
   const [gameState, setGameState] = useState<'ready' | 'playing' | 'ended'>('ready');
   const [timeLeft, setTimeLeft] = useState(60);
@@ -34,12 +72,15 @@ export default function ColorCompass() {
   }, [gameState, timeLeft]);
 
   const startGame = () => {
+    // Initialize the first set of colors
+    const { newTargetColors, newColorPool } = initializeRoundColors(0); 
+
     setGameState('playing');
     setTimeLeft(60);
     setScore(0);
-    setTargetColors(generateColorPool(4));
-    setColorPool(generateColorPool(12));
-  };
+    setTargetColors(newTargetColors);
+    setColorPool(newColorPool);
+};
 
   const endGame = () => {
     setGameState('ended');
@@ -50,19 +91,28 @@ export default function ColorCompass() {
   };
 
   const handleColorClick = (color: string) => {
+
     if (targetColors.includes(color)) {
-      setScore(score + 10);
-      setTargetColors(targetColors.filter(c => c !== color));
-      
-      if (targetColors.length === 1) {
+      const newScore = score + 10;
+      setScore(newScore);
+
+      // Get the targets that remain AFTER the successful match
+      const remainingTargets = targetColors.filter(c => c !== color);
+
+      if (remainingTargets.length === 0) {
         // Round complete, generate new colors
-        setTargetColors(generateColorPool(4));
-        setColorPool(generateColorPool(12));
+        const { newTargetColors, newColorPool } = initializeRoundColors(newScore);
+        setTargetColors(newTargetColors);
+        setColorPool(newColorPool);
+      } else {
+        // Only update the targets state
+        setTargetColors(remainingTargets);
       }
+      
     } else {
       setScore(Math.max(0, score - 5));
     }
-  };
+};
 
   return (
     <div className="min-h-screen pt-24 pb-20">
@@ -116,9 +166,9 @@ export default function ColorCompass() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-4 gap-4">
-                  {targetColors.map((color, index) => (
+                  {targetColors.map((color) => (
                     <div
-                      key={index}
+                      key={color}
                       className="aspect-square rounded-lg border-2 border-primary"
                       style={{ backgroundColor: color }}
                     />
@@ -133,9 +183,9 @@ export default function ColorCompass() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-4 gap-4">
-                  {colorPool.map((color, index) => (
+                  {colorPool.map((color) => (
                     <button
-                      key={index}
+                      key={color}
                       onClick={() => handleColorClick(color)}
                       className="aspect-square rounded-lg border-2 border-border hover:border-primary transition-all hover:scale-105 cursor-pointer"
                       style={{ backgroundColor: color }}
