@@ -22,7 +22,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <CursorTrail />
-      <BrowserRouter>
+      <BrowserRouter basename="/spirit-art-nexus">
         <Navigation />
         <Routes>
           <Route path="/" element={<Home />} />
