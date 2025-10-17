@@ -26,16 +26,16 @@ const pricingTiers = [
     name: 'Standard',
     price: '$80-$129',
     // Clarify: 1 character included. The fee applies to all additional characters.
-    description: '1 Character Included in Base Price. Each additional subject/character adds 50% to the base price.',
+    description: '2 Characters Included in Base Price. Each additional subject/character adds 50% to the base price.',
     // Clarify: Now focuses on quality of service and background, not character count.
-    features: ['1 Character Included', 'Detailed background/scenery', '2 revision rounds', 'High-res + print files', 'Commercial usage rights'],
+    features: ['2 Characters Included', 'Detailed background/scenery', '2 revision rounds', 'High-res + print files', 'Commercial usage rights'],
   },
   {
     name: 'Premium',
     price: '$149-$500',
     // Clarify: 1 character included. The fee applies to all additional characters.
-    description: '1 Character Included in Base Price. Final price is based on custom estimate after submission (additional characters add 50%).',
-    features: ['1 Character Included', 'Complex scene/full environment', 'Unlimited revisions', 'All file formats', 'Full commercial rights', 'Priority turnaround'],
+    description: 'Final price is based on custom estimate after submission.',
+    features: ['Multiple characters/subjects', 'Complex scene/full environment', 'Unlimited revisions', 'All file formats', 'Full commercial rights', 'Priority turnaround'],
   },
 ];
 
