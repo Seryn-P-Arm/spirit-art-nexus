@@ -112,10 +112,15 @@ export default function Commissions() {
                     <SelectValue placeholder="Select a tier" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="sketch">Sketch - $15-$35</SelectItem>
-                    <SelectItem value="basic">Basic - $29-$75</SelectItem>
-                    <SelectItem value="standard">Standard - $80-$129</SelectItem>
-                    <SelectItem value="premium">Premium - $149+</SelectItem>
+                    {/* MAPPING OVER THE PRICING TIERS ARRAY */}
+                    {pricingTiers.map((tier) => (
+                      <SelectItem 
+                      key={tier.name} // Use the name as the key
+                      value={tier.name.toLowerCase()} // Use a lowercase name as the form value
+                      >
+                      {`${tier.name} - ${tier.price}`}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
