@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const pricingTiers = [
   {
@@ -40,8 +42,18 @@ const pricingTiers = [
 ];
 
 export default function Commissions() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast.error('Please sign in to submit a commission request');
+      navigate('/auth');
+      return;
+    }
+    
     toast.success('Commission request submitted! I\'ll get back to you soon.');
   };
 
@@ -89,10 +101,23 @@ export default function Commissions() {
           <CardHeader>
             <CardTitle>Request a Commission</CardTitle>
             <CardDescription>
-              Fill out the form below with as much detail as possible
+              {user 
+                ? 'Fill out the form below with as much detail as possible'
+                : 'Please sign in to submit a commission request'
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {!user ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">
+                  You need to be signed in to submit commission requests
+                </p>
+                <Button onClick={() => navigate('/auth')}>
+                  Sign In
+                </Button>
+              </div>
+            ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -144,6 +169,7 @@ export default function Commissions() {
                 Submit Commission Request
               </Button>
             </form>
+            )}
           </CardContent>
         </Card>
       </div>

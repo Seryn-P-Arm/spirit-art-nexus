@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Palette } from 'lucide-react';
+import { UserMenu } from './UserMenu';
 
 export const Navigation = () => {
   const location = useLocation();
@@ -40,6 +41,7 @@ export const Navigation = () => {
                 )}
               </Link>
             ))}
+            <UserMenu />
           </div>
         </div>
       </div>
