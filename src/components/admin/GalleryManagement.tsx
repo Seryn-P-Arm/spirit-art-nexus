@@ -9,6 +9,10 @@ import { Switch } from '@/components/ui/switch';
 import { Loader2, Plus, Pencil, Trash2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+// --- CONSTANTS ---
+const ARTWORK_BUCKET = 'gallery-artworks';
+
+// --- INTERFACES ---
 interface Artwork {
   id: string;
   title: string;
@@ -26,14 +30,49 @@ interface Category {
   name: string;
 }
 
+// --- HELPER FUNCTION: SUPABASE STORAGE UPLOAD ---
+const uploadArtworkImage = async (file: File) => {
+    // 1. Generate a unique file path (e.g., artworks/timestamp_random.ext)
+    const fileExt = file.name.split('.').pop();
+    // Create a unique file name using timestamp + random string
+    const uniqueName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+    const filePath = `artworks/${uniqueName}`; // Store inside an 'artworks' folder
+
+    // 2. Upload the file to the bucket
+    const { error: uploadError } = await supabase.storage
+        .from(ARTWORK_BUCKET)
+        .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false,
+        });
+
+    if (uploadError) {
+        throw uploadError;
+    }
+
+    // 3. Get the public URL for the file
+    const { data: publicUrlData } = supabase.storage
+        .from(ARTWORK_BUCKET)
+        .getPublicUrl(filePath);
+
+    return publicUrlData.publicUrl; // Returns the full URL (e.g., https://xyz.supabase.co/storage/v1/object/public/gallery-artworks/artworks/file.jpg)
+};
+
+
 export function GalleryManagement() {
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // NEW STATE: To hold the file object for upload
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
+  // Updated formData structure
   const [formData, setFormData] = useState({
     title: '',
-    image_url: '',
+    // image_url is only used for editing existing artwork, new art uses imageFile
+    image_url: '', 
     medium: '',
     size: '',
     year: '',
@@ -46,6 +85,7 @@ export function GalleryManagement() {
     fetchData();
   }, []);
 
+  // --- Data Fetching Logic (Same as before) ---
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -66,12 +106,26 @@ export function GalleryManagement() {
     }
   };
 
+  // --- SUBMIT LOGIC (Updated to handle upload) ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true); // Re-use the loading state for form submission
+
+    let finalImageUrl = formData.image_url;
+
     try {
+      // 1. HANDLE IMAGE UPLOAD (Only for NEW Artwork)
+      if (!editingId && imageFile) {
+        finalImageUrl = await uploadArtworkImage(imageFile);
+      } else if (!editingId && !imageFile) {
+        // Prevent submission if it's a new artwork without a file
+        throw new Error('Please select an image file for the new artwork.');
+      }
+      
+      // 2. PREPARE DATABASE DATA
       const data = {
         title: formData.title,
-        image_url: formData.image_url,
+        image_url: finalImageUrl, // Use the uploaded URL or existing URL
         medium: formData.medium || null,
         size: formData.size || null,
         year: formData.year ? parseInt(formData.year) : null,
@@ -79,6 +133,7 @@ export function GalleryManagement() {
         is_partner_preview: formData.is_partner_preview,
       };
 
+      // 3. INSERT or UPDATE
       if (editingId) {
         const { error } = await supabase.from('gallery_artworks').update(data).eq('id', editingId);
         if (error) throw error;
@@ -90,14 +145,23 @@ export function GalleryManagement() {
       }
 
       resetForm();
-      fetchData();
+      fetchData(); // Refresh the list
     } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        console.error('Submission Error:', error);
+        toast({ 
+            title: 'Error', 
+            description: error.message || 'Failed to process artwork.', 
+            variant: 'destructive' 
+        });
+    } finally {
+        setLoading(false);
     }
   };
 
+  // --- EDIT LOGIC (Same as before, clears imageFile) ---
   const handleEdit = (artwork: Artwork) => {
     setEditingId(artwork.id);
+    setImageFile(null); // Crucial: clear file state when editing
     setFormData({
       title: artwork.title,
       image_url: artwork.image_url,
@@ -109,8 +173,11 @@ export function GalleryManagement() {
     });
   };
 
+  // --- DELETE LOGIC (Same as before, you might want to add image deletion from storage here later) ---
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this artwork?')) return;
+    // NOTE: For a complete solution, you would first fetch the image_url for this artwork,
+    // and then use the supabase.storage.from('gallery-artworks').remove(['path/to/image.jpg']) method.
     try {
       const { error } = await supabase.from('gallery_artworks').delete().eq('id', id);
       if (error) throw error;
@@ -121,11 +188,14 @@ export function GalleryManagement() {
     }
   };
 
+  // --- RESET LOGIC (Clears file state) ---
   const resetForm = () => {
     setEditingId(null);
+    setImageFile(null); // Crucial: reset the file
     setFormData({ title: '', image_url: '', medium: '', size: '', year: '', category_id: '', is_partner_preview: false });
   };
 
+  // --- LOADING RENDER (Same as before) ---
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -134,6 +204,7 @@ export function GalleryManagement() {
     );
   }
 
+  // --- MAIN RENDER (Updated Form) ---
   return (
     <div className="space-y-6">
       <Card className="p-6">
@@ -144,10 +215,42 @@ export function GalleryManagement() {
               <Label htmlFor="title">Title *</Label>
               <Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required />
             </div>
+            
+            {/* --- NEW FILE INPUT or OLD URL INPUT --- */}
             <div>
-              <Label htmlFor="image_url">Image URL *</Label>
-              <Input id="image_url" value={formData.image_url} onChange={(e) => setFormData({ ...formData, image_url: e.target.value })} required />
+                {editingId ? (
+                    // Display existing URL or image placeholder when editing
+                    <>
+                        <Label htmlFor="image_url">Image URL</Label>
+                        <Input 
+                            id="image_url" 
+                            value={formData.image_url} 
+                            onChange={(e) => setFormData({ ...formData, image_url: e.target.value })} 
+                            // When editing, you can choose to allow changing the URL manually or force re-upload.
+                            // For simplicity here, we allow manual editing of the URL.
+                        />
+                        <p className="text-sm text-muted-foreground mt-1">
+                            <span className="truncate block">{formData.image_url || 'No image URL saved.'}</span>
+                        </p>
+                        <p className="text-xs text-orange-500 mt-1">To change the image, you must manually edit the URL or delete and re-add the artwork.</p>
+                    </>
+                ) : (
+                    // Require file input for NEW artwork
+                    <>
+                        <Label htmlFor="artwork-image">Artwork Image *</Label>
+                        <Input
+                            id="artwork-image"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                            required={!editingId}
+                        />
+                         {imageFile && <p className="text-sm text-muted-foreground mt-1">Ready to upload: {imageFile.name}</p>}
+                    </>
+                )}
             </div>
+            
+            {/* --- REST OF THE FORM (Same as before) --- */}
             <div>
               <Label htmlFor="medium">Medium</Label>
               <Input id="medium" value={formData.medium} onChange={(e) => setFormData({ ...formData, medium: e.target.value })} />
@@ -179,12 +282,15 @@ export function GalleryManagement() {
             <Label>Partner Preview</Label>
           </div>
           <div className="flex gap-2">
-            <Button type="submit">{editingId ? 'Update' : 'Add'} Artwork</Button>
+            <Button type="submit" disabled={loading}>
+                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : (editingId ? 'Update' : 'Add') + ' Artwork'}
+            </Button>
             {editingId && <Button type="button" variant="outline" onClick={resetForm}>Cancel</Button>}
           </div>
         </form>
       </Card>
 
+      {/* --- ARTWORK LIST (Same as before) --- */}
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Artworks ({artworks.length})</h3>
         <Button variant="outline" size="sm" onClick={fetchData}>
