@@ -14,6 +14,11 @@ interface Category {
   created_at: string;
 }
 
+// Helper function for slug generation
+const generateSlug = (text: string) => {
+    return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+};
+
 export function CategoryManagement() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,17 +50,22 @@ export function CategoryManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Ensure slug is generated/normalized before submission if it's empty
+      const finalFormData = {
+          ...formData,
+          slug: formData.slug || generateSlug(formData.name),
+      };
       if (editingId) {
         const { error } = await supabase
           .from('gallery_categories')
-          .update(formData)
+          .update(finalFormData)
           .eq('id', editingId);
         if (error) throw error;
         toast({ title: 'Success', description: 'Category updated successfully' });
       } else {
         const { error } = await supabase
           .from('gallery_categories')
-          .insert(formData);
+          .insert(finalFormData);
         if (error) throw error;
         toast({ title: 'Success', description: 'Category added successfully' });
       }
@@ -108,7 +118,15 @@ export function CategoryManagement() {
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  const newSlug = generateSlug(newName);
+                  setFormData({ 
+                    ...formData, 
+                    name: newName,
+                    slug: editingId ? formData.slug : newSlug 
+                  });
+                }}
                 required
               />
             </div>
@@ -117,7 +135,7 @@ export function CategoryManagement() {
               <Input
                 id="slug"
                 value={formData.slug}
-                onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                onChange={(e) => setFormData({ ...formData, slug: generateSlug(e.target.value) })}
                 required
               />
             </div>
