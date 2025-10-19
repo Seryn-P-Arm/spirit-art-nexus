@@ -4,6 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
+import { GalleryManagement } from '@/components/admin/GalleryManagement';
+import { CategoryManagement } from '@/components/admin/CategoryManagement';
+import { MerchManagement } from '@/components/admin/MerchManagement';
+import { PartnerContentManagement } from '@/components/admin/PartnerContentManagement';
 
 export default function Admin() {
   const { isAdmin, loading } = useAuth();
@@ -56,19 +60,19 @@ export default function Admin() {
           </TabsContent>
 
           <TabsContent value="gallery" className="space-y-4">
-            <p className="text-muted-foreground">Gallery management coming soon...</p>
+            <GalleryManagement />
           </TabsContent>
 
           <TabsContent value="categories" className="space-y-4">
-            <p className="text-muted-foreground">Category management coming soon...</p>
+            <CategoryManagement />
           </TabsContent>
 
           <TabsContent value="merch" className="space-y-4">
-            <p className="text-muted-foreground">Merch management coming soon...</p>
+            <MerchManagement />
           </TabsContent>
 
           <TabsContent value="partner" className="space-y-4">
-            <p className="text-muted-foreground">Partner content management coming soon...</p>
+            <PartnerContentManagement />
           </TabsContent>
         </Tabs>
       </div>
