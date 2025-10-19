@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield } from 'lucide-react';
+import { UserManagement } from '@/components/admin/UserManagement';
 
 export default function Admin() {
   const { isAdmin, loading } = useAuth();
@@ -41,14 +42,18 @@ export default function Admin() {
           </p>
         </div>
 
-        <Tabs defaultValue="gallery" className="space-y-6">
+        <Tabs defaultValue="users" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="users">User Management</TabsTrigger>
             <TabsTrigger value="gallery">Gallery</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="merch">Merch</TabsTrigger>
             <TabsTrigger value="partner">Partner Content</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="users" className="space-y-4">
+            <UserManagement />
+          </TabsContent>
 
           <TabsContent value="gallery" className="space-y-4">
             <p className="text-muted-foreground">Gallery management coming soon...</p>
@@ -64,10 +69,6 @@ export default function Admin() {
 
           <TabsContent value="partner" className="space-y-4">
             <p className="text-muted-foreground">Partner content management coming soon...</p>
-          </TabsContent>
-
-          <TabsContent value="users" className="space-y-4">
-            <p className="text-muted-foreground">User management coming soon...</p>
           </TabsContent>
         </Tabs>
       </div>
