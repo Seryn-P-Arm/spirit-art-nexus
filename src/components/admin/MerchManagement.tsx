@@ -24,11 +24,15 @@ export function MerchManagement() {
   const [products, setProducts] = useState<MerchProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null); // NEW: State for the file
+  const [isSubmitting, setIsSubmitting] = useState(false); // NEW: State for submission status
+  
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
-    image_url: '',
+    // image_url will be set during upload, but we keep it here for editing existing products
+    image_url: '', 
     redbubble_url: '',
     is_early_access: false,
   });
@@ -57,22 +61,55 @@ export function MerchManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    let finalImageUrl = formData.image_url;
+
     try {
-      const data = {
+      // 1. Handle Image Upload (ONLY if a new file is selected or adding a new product)
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `products/${fileName}`;
+        
+        // IMPORTANT: Using the dedicated 'merch-images' bucket
+        const { error: uploadError } = await supabase.storage
+          .from('merch-images') 
+          .upload(filePath, imageFile, {
+            cacheControl: '3600',
+            upsert: true,
+          });
+
+        if (uploadError) throw new Error(`Upload Error: ${uploadError.message}`);
+
+        // Get the public URL for the image
+        const { data: publicUrlData } = supabase.storage
+          .from('merch-images')
+          .getPublicUrl(filePath);
+        
+        finalImageUrl = publicUrlData.publicUrl;
+      } else if (!editingId) {
+        // Prevent submission if it's a new product and no image is selected
+        throw new Error('Please select an image file for the new product.');
+      }
+
+
+      // 2. Prepare Data for Database Insert/Update
+      const dataToSave = {
         name: formData.name,
         description: formData.description || null,
         price: formData.price,
-        image_url: formData.image_url,
+        image_url: finalImageUrl, // Use the new URL or existing URL
         redbubble_url: formData.redbubble_url,
         is_early_access: formData.is_early_access,
       };
 
+      // 3. Insert or Update Database Record
       if (editingId) {
-        const { error } = await supabase.from('merch_products').update(data).eq('id', editingId);
+        const { error } = await supabase.from('merch_products').update(dataToSave).eq('id', editingId);
         if (error) throw error;
         toast({ title: 'Success', description: 'Product updated successfully' });
       } else {
-        const { error } = await supabase.from('merch_products').insert(data);
+        const { error } = await supabase.from('merch_products').insert(dataToSave);
         if (error) throw error;
         toast({ title: 'Success', description: 'Product added successfully' });
       }
@@ -80,7 +117,13 @@ export function MerchManagement() {
       resetForm();
       fetchProducts();
     } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ 
+        title: 'Submission Error', 
+        description: error.message.includes('StorageApiError') ? 'Storage Upload Failed: Check your RLS policies on the merch-images bucket.' : error.message, 
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -94,6 +137,7 @@ export function MerchManagement() {
       redbubble_url: product.redbubble_url,
       is_early_access: product.is_early_access,
     });
+    setImageFile(null); // Reset file input when editing
   };
 
   const handleDelete = async (id: string) => {
@@ -111,6 +155,7 @@ export function MerchManagement() {
   const resetForm = () => {
     setEditingId(null);
     setFormData({ name: '', description: '', price: '', image_url: '', redbubble_url: '', is_early_access: false });
+    setImageFile(null); // Reset file state
   };
 
   if (loading) {
@@ -135,10 +180,19 @@ export function MerchManagement() {
               <Label htmlFor="price">Price *</Label>
               <Input id="price" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} required />
             </div>
-            <div>
-              <Label htmlFor="image_url">Image URL *</Label>
-              <Input id="image_url" value={formData.image_url} onChange={(e) => setFormData({ ...formData, image_url: e.target.value })} required />
+            
+            {/* REPLACED IMAGE URL INPUT WITH FILE INPUT */}
+            <div className="col-span-2">
+              <Label htmlFor="image_file">Product Image {editingId && !imageFile ? '(Optional: Keep current image)' : '*'}</Label>
+              <Input 
+                id="image_file" 
+                type="file" 
+                accept="image/*" 
+                onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
+                required={!editingId} // Only required when adding a new product
+              />
             </div>
+            
             <div>
               <Label htmlFor="redbubble_url">Redbubble URL *</Label>
               <Input id="redbubble_url" value={formData.redbubble_url} onChange={(e) => setFormData({ ...formData, redbubble_url: e.target.value })} required />
@@ -153,15 +207,21 @@ export function MerchManagement() {
             <Label>Early Access</Label>
           </div>
           <div className="flex gap-2">
-            <Button type="submit">{editingId ? 'Update' : 'Add'} Product</Button>
-            {editingId && <Button type="button" variant="outline" onClick={resetForm}>Cancel</Button>}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                `${editingId ? 'Update' : 'Add'} Product`
+              )}
+            </Button>
+            {editingId && <Button type="button" variant="outline" onClick={resetForm} disabled={isSubmitting}>Cancel</Button>}
           </div>
         </form>
       </Card>
 
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Products ({products.length})</h3>
-        <Button variant="outline" size="sm" onClick={fetchProducts}>
+        <Button variant="outline" size="sm" onClick={fetchProducts} disabled={isSubmitting}>
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
         </Button>
