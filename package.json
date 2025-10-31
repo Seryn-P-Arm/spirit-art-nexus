@@ -2,7 +2,12 @@
   "name": "vite_react_shadcn_ts",
   "private": true,
   "version": "0.0.0",
+  "homepage": "https://seryn-p-arm.github.io/spirit-art-nexus/",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Seryn-P-Arm/spirit-art-nexus.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
